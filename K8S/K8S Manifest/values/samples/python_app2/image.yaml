@@ -1,0 +1,51 @@
+
+####################################################################################
+# Khởi tạo thông tin image.
+# Nội dung:
+# Repository, tag (khởi tạo ban đầu, sau đó argocd sẽ update lại tag với file .argocd....), pullPolicy (chế độ pull về), pullSecret.
+image:
+  repository: staging-docker-registry.fbox.fpt.vn/vinhntq-test/python-api
+  tag: dev
+  pullPolicy: Always
+  pullSecret: harbor-registry
+  serviceAccount: default
+####################################################################################
+
+####################################################################################
+# Khai báo host aliases:
+# Cấu trúc:
+# hostAliases:
+# - ip: "xxx.xxx.xxx.xxx"
+#   hostnames:
+#   - "name1"
+#   - "name2"
+hostAliases: {}
+# Khai báo chế độ restart khi start pod fail. 
+restartPolicy: Always
+####################################################################################
+
+####################################################################################
+# Khai báo service.
+# Gồm: name, replicas, port, typport
+service:
+  applicationName: python-app2
+  replicas: 1
+  revisionHistoryLimit: 0
+  port: 5000
+  typePort: NodePort
+####################################################################################
+
+####################################################################################
+# Khai báo initContainers
+initContainer:
+  name: sysctl-init
+  image: busybox
+  command:
+  - /bin/sh
+  - -c
+  - |
+    sysctl -w net.core.somaxconn=60000
+####################################################################################
+
+
+

@@ -1,0 +1,49 @@
+####################################################################################
+# Khởi tạo thông tin image.
+# Nội dung:
+# Repository, tag (khởi tạo ban đầu, sau đó argocd sẽ update lại tag với file .argocd....), pullPolicy (chế độ pull về), pullSecret.
+image:
+  repository: staging-docker-registry.fbox.fpt.vn/api/cms-api-logs
+  tag: staging
+  pullPolicy: Always
+  pullSecret: harbor-registry
+  serviceAccount: default
+####################################################################################
+
+####################################################################################
+# Khai báo host aliases:
+# Cấu trúc:
+# hostAliases:
+# - ip: "xxx.xxx.xxx.xxx"
+#   hostnames:
+#   - "name1"
+#   - "name2"
+hostAliases: {}
+# Khai báo chế độ restart khi start pod fail. 
+restartPolicy: Always
+####################################################################################
+
+####################################################################################
+# Khai báo service.
+# Gồm: name, replicas, port, typport
+service:
+  applicationName: cms-api-logs
+  replicas: 2
+  revisionHistoryLimit: 0
+  port: 8001
+  targetPort: 8001
+  typePort: ClusterIP
+####################################################################################
+
+####################################################################################
+# Khai báo initContainers
+initContainer:
+  name: sysctl-init
+  image: busybox
+  command:
+  - /bin/sh
+  - -c
+  - |
+    sysctl -w net.core.somaxconn=60000
+####################################################################################
+

@@ -1,0 +1,8 @@
+helm:
+  parameters:
+  - name: image.name
+    value: staging-docker-registry.fbox.fpt.vn/api/api-cache-manager
+    forcestring: true
+  - name: image.tag
+    value: dev-build-01e02f3fd027368866221c501142e1f2f46fcfc9
+    forcestring: true

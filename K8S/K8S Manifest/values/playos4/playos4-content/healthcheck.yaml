@@ -1,0 +1,37 @@
+
+####################################################################################
+# Kiểm tra khi nào pod khởi động lại bằng cách health check vào pod.
+healthcheck:
+  livenessProbe:
+    enabled: true
+    httpGet:
+      path: /content/health_check
+      port: 5000
+    initialDelaySeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+    periodSeconds: 10
+
+  # Custom livenessProbe.
+  customLivenessProbe: {}
+  # Xác định mức độ sẵn sàng. Kiểm tra xem khi nào thì app trong pod có thể nhận traffic.
+  readinessProbe:
+    enabled: true
+    httpGet:
+      path: /content/health_check
+      port: 5000
+    initialDelaySeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 2
+    periodSeconds: 10
+
+  # Custom readinessProbe
+  customReadinessProbe: {}
+
+  lifecycle:
+    preStop:
+      exec:
+        command: ["sh","-c","sleep 10"]
+####################################################################################

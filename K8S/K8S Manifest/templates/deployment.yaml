@@ -1,0 +1,187 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.applicationName }}
+  labels: {{- include "common.labels" . | nindent 4 }}
+spec:
+### REPLICAS ###
+  revisionHistoryLimit: {{ .Values.service.revisionHistoryLimit }}
+  {{- if .Values.autoscaling.enabled }}
+  replicas: {{ .Values.autoscaling.minReplicas }}
+  {{- else }}
+  replicas: {{ .Values.service.replicas }}
+  {{- end }}
+### [END] REPLICAS ###
+
+  strategy:
+    type: {{ .Values.strategy.type }}
+    rollingUpdate: 
+        maxUnavailable: {{ .Values.strategy.maxUnavailable }}
+        maxSurge: {{ .Values.strategy.maxSurge }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.applicationName }}
+  template:
+    metadata:
+      labels: {{- include "common.labels" . | nindent 8 }}      
+        app: {{ .Values.service.applicationName }}
+    spec:
+      {{- if .Values.hostAliases }}
+      hostAliases: {{- .Values.hostAliases | toYaml | nindent 8}}
+      {{- end }}
+      restartPolicy: {{ .Values.restartPolicy }}
+      imagePullSecrets:
+      - name: {{ .Values.image.pullSecret }}
+### AFFINITY ###
+      {{- if .Values.Affinity.enabled }}
+      affinity:
+        {{- if .Values.Affinity.podAntiAffinity.enabled }}
+        podAntiAffinity:
+          {{- if .Values.Affinity.podAntiAffinity.soft.enabled }}
+          preferredDuringSchedulingIgnoredDuringExecution: 
+          - weight: {{ .Values.Affinity.podAntiAffinity.weight }}
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: {{ .Values.Affinity.podAntiAffinity.key }}
+                  operator: {{ .Values.Affinity.podAntiAffinity.operator }}
+                  values: {{ .Values.Affinity.podAntiAffinity.values | toYaml | nindent 18 }}
+              topologyKey: {{ .Values.Affinity.podAntiAffinity.topologyKey }}
+          {{- else }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: {{ .Values.Affinity.podAntiAffinity.key }}
+                operator: {{ .Values.Affinity.podAntiAffinity.operator }}
+                values: {{ .Values.Affinity.podAntiAffinity.values | toYaml | nindent 18 }}
+            topologyKey: {{ .Values.Affinity.podAntiAffinity.topologyKey }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.Affinity.podAffinity.enabled }}
+        podAffinity:
+          {{- if .Values.Affinity.podAffinity.soft.enabled }}
+          preferredDuringSchedulingIgnoredDuringExecution: 
+          - weight: {{ .Values.Affinity.podAffinity.weight }}
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: {{ .Values.Affinity.podAffinity.key }}
+                  operator: {{ .Values.Affinity.podAffinity.operator }}
+                  values: {{ .Values.Affinity.podAffinity.values | toYaml | nindent 18 }}
+              topologyKey: {{ .Values.Affinity.podAffinity.topologyKey }}
+          {{- else }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: {{ .Values.Affinity.podAffinity.key }}
+                operator: {{ .Values.Affinity.podAffinity.operator }}
+                values: {{ .Values.Affinity.podAffinity.values | toYaml | nindent 18 }}
+            topologyKey: {{ .Values.Affinity.podAffinity.topologyKey }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.Affinity.nodeAntiAffinity.enabled}}
+        nodeAffinity:
+          {{- if .Values.Affinity.nodeAffinity.soft.enabled }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ .Values.Affinity.nodeAntiAffinity.key }}
+                operator: {{ .Values.Affinity.nodeAntiAffinity.operator }}
+                values: {{ .Values.Affinity.nodeAntiAffinity.values | toYaml | nindent 18 }}
+          {{- else }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ .Values.Affinity.nodeAntiAffinity.key }}
+                operator: {{ .Values.Affinity.nodeAntiAffinity.operator }}
+                values: {{ .Values.Affinity.nodeAntiAffinity.values | toYaml | nindent 18 }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+### [END] AFFINITY
+
+### INIT CONTAINER ###
+      {{- if .Values.initContainer }}
+      initContainers:
+        - name: {{ .Values.initContainer.name }}
+          image: {{ .Values.initContainer.image }}
+          command: {{ .Values.initContainer.command | toYaml | nindent 10 }}
+          securityContext:
+            privileged: true
+      {{- end }}
+      serviceAccount: {{ .Values.image.serviceAccount | default "default"}}
+      containers:
+      - name: {{ .Values.service.applicationName }}
+        image: {{ .Values.image.repository}}:{{ .Values.image.tag }}
+        ports:
+        - containerPort: {{ .Values.service.port }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+### INIT CONTAINER ###
+
+### RESOURCES ###
+        resources:
+            limits:
+                cpu: {{ .Values.resources.limit.cpu }}
+                memory: {{ .Values.resources.limit.memory }}
+            requests:
+                cpu: {{ .Values.resources.request.cpu }}
+                memory: {{ .Values.resources.request.memory }}
+### [END] RESOURCES ###
+
+### HEALTH CHECK ###
+        {{- if .Values.healthcheck.livenessProbe.enabled }}
+        livenessProbe:
+            httpGet:
+              path: {{ .Values.healthcheck.livenessProbe.httpGet.path }}
+              port: {{ .Values.healthcheck.livenessProbe.httpGet.port }}
+          {{- with .Values.healthcheck.livenessProbe }}
+            initialDelaySeconds: {{ .initialDelaySeconds }}
+            timeoutSeconds: {{ .timeoutSeconds }}
+            failureThreshold: {{ .failureThreshold }}
+            successThreshold: {{ .successThreshold }}
+            periodSeconds: {{ .periodSeconds }}
+          {{- end }}
+        {{- else if .Values.healthcheck.customLivenessProbe }}
+        livenessProbe: {{ .Values.healthcheck.customLivenessProbe | toYaml | nindent 10 }}
+        {{- end }}
+        {{- if .Values.healthcheck.readinessProbe.enabled }}
+        readinessProbe:
+            httpGet:
+              path: {{ .Values.healthcheck.readinessProbe.httpGet.path }}
+              port: {{ .Values.healthcheck.readinessProbe.httpGet.port }}
+          {{- with .Values.healthcheck.readinessProbe }}
+            initialDelaySeconds: {{ .initialDelaySeconds }}
+            timeoutSeconds: {{ .timeoutSeconds }}
+            failureThreshold: {{ .failureThreshold }}
+            successThreshold: {{ .successThreshold }}
+            periodSeconds: {{ .periodSeconds }}
+          {{- end }}
+        {{- else if .Values.healthcheck.customReadinessProbe}}
+        readinessProbe: {{.Values.healthcheck.customReadinessProbe | toYaml | nindent 10 }}
+        {{- end }}
+### [END] HEALTH CHECK ###
+
+### GRACEFUL SHUTDOWN ###
+        {{- if .Values.healthcheck.lifecycle }}
+        lifecycle: {{ .Values.healthcheck.lifecycle | toYaml | nindent 10 }}         
+        {{- end }}
+### [END] GRACEFUL SHUTDOWN ###
+
+### ENV ###
+        {{- if .Values.env }}
+        env: {{ .Values.env | toYaml | nindent 10 }}
+        {{- end }}
+### [END] ENV ###
+        
+### VOLUME MOUNT ###
+        {{- if .Values.volumeMount }}
+        volumeMounts: {{ .Values.volumeMount | toYaml | nindent 10 }}
+        {{- end }}
+### [END] VOLUME MOUNT ###
+
+### VOLUME ###
+      {{- if .Values.volume }}
+      volumes: {{ .Values.volume | toYaml | nindent 8 }}
+      {{- end }}
+### [END] VOLUME ###
+

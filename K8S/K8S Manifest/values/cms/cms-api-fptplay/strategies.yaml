@@ -1,0 +1,99 @@
+####################################################################################
+# Khai báo chiến lược. Gồm: Recreate, RollingUpdate.
+strategy:
+  type: RollingUpdate
+  maxUnavailable: 50%
+  maxSurge: 10%
+####################################################################################
+
+####################################################################################
+resources:
+  # Giới hạn resource sd
+  limit: 
+    cpu: 256m
+    memory: 512Mi
+
+  # Giới hạn 1 node phải có để khởi tạo pod
+  request:
+    cpu: 128m
+    memory: 512Mi
+####################################################################################
+
+####################################################################################
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPU: 50
+  targetMemory:
+  behavior:
+    enabled: true
+    scaleDown:
+      enabled: true
+      pods:
+        periodSeconds: 20
+        value: 1
+      percent:
+        periodSeconds: 20
+        value: 10
+      selectPolicy: Max
+      stabilizationWindowSeconds: 10
+
+    scaleUp:
+      enabled: true
+      pods:
+        periodSeconds: 20
+        value: 2
+      percent: 
+        periodSeconds: 20
+        value: 50
+      selectPolicy: Max
+      stabilizationWindowSeconds: 10
+####################################################################################
+
+####################################################################################
+# Khởi tạo pod/node xa hoặc gần 1 pod/node
+Affinity:
+  enabled: true
+  podAntiAffinity: # Khởi tạo pod xa pod khác với đk theo labels
+    enabled: true
+    soft:
+      # Cho phép deploy vs 2 chế độ.
+      # soft: nếu deploy xa 1 pod nhưng không đủ node thì vẫn có thể deploy chung node đó.
+      # hard (soft=false): nếu deploy xa 1 pod nhưng không đủ node thì những pod sau sẽ ở chế độ pending.
+      enabled: false 
+    weight: 100
+    key: app
+    operator: In
+    values:
+    - cms-api-fptplay
+    topologyKey: "kubernetes.io/hostname"
+
+  podAffinity: # Khởi tạo pod xa pod khác với đk theo labels
+    enabled: false
+    soft:
+      # Cho phép deploy vs 2 chế độ.
+      # soft: nếu deploy xa 1 pod nhưng không đủ node thì vẫn có thể deploy chung node đó.
+      # hard (soft=false): nếu deploy xa 1 pod nhưng không đủ node thì những pod sau sẽ ở chế độ pending.
+      enabled: false 
+    weight:
+    key: 
+    operator: 
+    values: {}
+    topologyKey:
+  
+  nodeAntiAffinity:
+    enabled: false
+    soft:
+      # Cho phép deploy vs 2 chế độ.
+      # soft: nếu deploy xa 1 pod nhưng không đủ node thì vẫn có thể deploy chung node đó.
+      # hard (soft=false): nếu deploy xa 1 pod nhưng không đủ node thì những pod sau sẽ ở chế độ pending.
+      enabled: false
+    key:
+    weight:
+    operator:
+    values: {}
+    topologyKey:
+####################################################################################
+
+

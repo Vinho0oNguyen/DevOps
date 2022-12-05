@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/git-branch: staging
+    argocd-image-updater.argoproj.io/image-list: myimage=staging-docker-registry.fbox.fpt.vn/api/api-sport-fptplay
+    argocd-image-updater.argoproj.io/myalias.force-update: "true"
+    argocd-image-updater.argoproj.io/myimage.allow-tags: regexp:staging-.*$
+    argocd-image-updater.argoproj.io/myimage.pull-secret: secret:argocd/harbor#credential
+    argocd-image-updater.argoproj.io/myimage.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: ' git:secret:argocd/git-creds'
+  name: staging-api-sport-fptplay
+spec:
+  destination:
+    namespace: demo-cms
+    server: https://118.69.166.171:6443
+  project: default
+  source:
+    helm:
+      valueFiles:
+      - values/cms/api-sport-fptplay/healthcheck.yaml
+      - values/cms/api-sport-fptplay/image.yaml
+      - values/cms/api-sport-fptplay/ingress.yaml
+      - values/cms/api-sport-fptplay/secret.yaml
+      - values/cms/api-sport-fptplay/strategies.yaml
+      - values/cms/api-sport-fptplay/volume.yaml
+      - values/cms/api-sport-fptplay/job.yaml
+    path: Manifest
+    repoURL: https://git.fpt.net/fpl/he-thong/test/demo-argocd/manifest.git
+    targetRevision: staging
+  syncPolicy:
+    syncOptions:
+    - PruneLast=true
+    - CreateNamespace=true
+

@@ -1,0 +1,49 @@
+####################################################################################
+# Khởi tạo thông tin image.
+# Nội dung:
+# Repository, tag (khởi tạo ban đầu, sau đó argocd sẽ update lại tag với file .argocd....), pullPolicy (chế độ pull về), pullSecret.
+image:
+  repository: staging-docker-registry.fbox.fpt.vn/api/api-cache-manager
+  tag: dev-build-8af59ab6fce9fece812830c3c3b062545652b172
+  pullPolicy: Always
+  pullSecret: harbor-registry
+  serviceAccount: default
+####################################################################################
+
+####################################################################################
+# Khai báo host aliases:
+# Cấu trúc:
+# hostAliases:
+# - ip: "xxx.xxx.xxx.xxx"
+#   hostnames:
+#   - "name1"
+#   - "name2"
+hostAliases: {}
+
+# Khai báo chế độ restart khi start pod fail. 
+restartPolicy: Always
+####################################################################################
+
+####################################################################################
+# Khai báo service.
+# Gồm: name, replicas, port, typport
+service:
+  applicationName: cache-manager
+  replicas: 2
+  revisionHistoryLimit: 0
+  port: 5001
+  targetPort: 5001
+  typePort: NodePort
+####################################################################################
+
+####################################################################################
+# Khai báo initContainers
+initContainer:
+  name: sysctl-init
+  image: busybox
+  command:
+  - /bin/sh
+  - -c
+  - |
+    sysctl -w net.core.somaxconn=60000
+####################################################################################

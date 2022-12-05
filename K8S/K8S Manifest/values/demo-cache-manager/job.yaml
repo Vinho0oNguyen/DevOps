@@ -1,0 +1,7 @@
+cronjob:
+  enabled: true 
+  jobName: curl-api
+  imageJob: curlimages/curl
+  hook: PostSync # PreSync, Sync, Skip, PostSync, SyncFail
+  deleteHook: HookSucceeded # HookSucceeded, HookFailed, BeforeHookCreation
+  args: curl -I https://google.com; sleep 10;echo '123' # <command1>;<command2>;<command3>;....;<command-N>

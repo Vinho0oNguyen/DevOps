@@ -1,0 +1,6 @@
+ingress:
+  enabled: false
+  path: /cachemanager
+  pathType: Prefix
+
+

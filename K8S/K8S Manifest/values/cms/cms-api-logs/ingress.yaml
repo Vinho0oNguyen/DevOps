@@ -1,0 +1,10 @@
+ingress:
+  enabled: false
+  hosts:
+  path: /cachemanager2
+  pathType: Prefix
+  tls:
+    enable: false
+    secretName:
+
+

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm-{{ .Values.service.applicationName }}
+  labels: {{- include "common.labels" . | nindent 4 }}
+data:
+  {{ .Values.configmap.key }}: {{ .Values.configmap.values | toYaml | indent 5 }}

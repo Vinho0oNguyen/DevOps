@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/git-branch: main
+    argocd-image-updater.argoproj.io/image-list: myimage=staging-docker-registry.fbox.fpt.vn/api/api-cache-manager
+    argocd-image-updater.argoproj.io/myalias.force-update: "true"
+    argocd-image-updater.argoproj.io/myimage.allow-tags: regexp:dev-.*$
+    argocd-image-updater.argoproj.io/myimage.pull-secret: secret:argocd/harbor#credential
+    argocd-image-updater.argoproj.io/myimage.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: ' git:secret:argocd/git-creds'
+  name: staging-cache-manager
+spec:
+  destination:
+    namespace: demo-cache-manager
+    server: https://staging-rancher.fbox.fpt.vn/k8s/clusters/local
+  project: default
+  source:
+    helm:
+      valueFiles:
+      - values/cache-manager/healthcheck.yaml
+      - values/cache-manager/image.yaml
+      - values/cache-manager/ingress.yaml
+      - values/cache-manager/secret.yaml
+      - values/cache-manager/strategies.yaml
+      - values/cache-manager/volume.yaml
+      - values/cache-manager/job.yaml
+    path: Manifest
+    repoURL: https://git.fpt.net/fpl/he-thong/test/demo-argocd/manifest.git
+    targetRevision: main
+  syncPolicy:
+    syncOptions:
+    - PruneLast=true
+    - CreateNamespace=true
